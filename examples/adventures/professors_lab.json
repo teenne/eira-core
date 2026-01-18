@@ -1,0 +1,349 @@
+{
+  "$schema": "https://eira.org/schemas/adventure-v1.json",
+  "id": "professors_lab",
+  "name": "The Professor's Lab",
+  "description": "Escape from the professor's mysterious laboratory before time runs out!",
+  "version": "1.0.0",
+  
+  "settings": {
+    "type": "TIMED",
+    "timeLimit": "PT1H",
+    "team": {
+      "minSize": 2,
+      "maxSize": 6,
+      "maxTeams": 4
+    },
+    "scoring": {
+      "timeBonus": true,
+      "timeBonusMultiplier": 1.5,
+      "checkpointPoints": true
+    }
+  },
+  
+  "checkpoints": [
+    {
+      "id": "enter_lab",
+      "name": "Enter the Laboratory",
+      "description": "Step through the door to begin your adventure",
+      "trigger": {
+        "type": "AREA_ENTER",
+        "area": {
+          "min": [-100, 64, -100],
+          "max": [-80, 80, -80]
+        }
+      },
+      "unlocks": ["find_hologram", "explore_main_room"],
+      "points": 0,
+      "onComplete": [
+        {
+          "action": "SHOW_TITLE",
+          "title": "Welcome to the Lab",
+          "subtitle": "The clock is ticking... you have 1 hour to escape!"
+        },
+        {
+          "action": "PLAY_SOUND",
+          "sound": "minecraft:block.note_block.pling"
+        },
+        {
+          "action": "WEBHOOK",
+          "url": "http://dashboard/adventure/start",
+          "includeTeamData": true
+        }
+      ]
+    },
+    
+    {
+      "id": "find_hologram",
+      "name": "Find the Professor's Hologram",
+      "description": "Locate and speak with the professor's AI assistant",
+      "trigger": {
+        "type": "NPC_CONVERSATION_START",
+        "npcId": "professor_hologram",
+        "minMessages": 1
+      },
+      "requires": ["enter_lab"],
+      "unlocks": ["get_first_clue"],
+      "points": 10,
+      "hint": {
+        "npcId": "lab_assistant",
+        "message": "I heard there's a holographic terminal in the main control room..."
+      }
+    },
+    
+    {
+      "id": "get_first_clue",
+      "name": "Learn the First Clue",
+      "description": "The professor's hologram knows something important...",
+      "trigger": {
+        "type": "NPC_SECRET_REVEALED",
+        "npcId": "professor_hologram",
+        "minLevel": 1
+      },
+      "requires": ["find_hologram"],
+      "unlocks": ["decode_puzzle"],
+      "points": 15,
+      "onComplete": [
+        {
+          "action": "BROADCAST",
+          "message": "§6[Discovery]§r Your team learned something important!"
+        }
+      ]
+    },
+    
+    {
+      "id": "decode_puzzle",
+      "name": "Decode the Message",
+      "description": "Use the clue to decode the hidden message. Look for QR codes or solve the terminal puzzle!",
+      "trigger": {
+        "type": "ANY_OF",
+        "triggers": [
+          {
+            "type": "HTTP_ENDPOINT",
+            "endpoint": "/puzzle/decode",
+            "requiredParams": {
+              "solution": "EINSTEIN"
+            }
+          },
+          {
+            "type": "REDSTONE_ON",
+            "position": [50, 65, 50],
+            "minStrength": 10
+          }
+        ]
+      },
+      "requires": ["get_first_clue"],
+      "unlocks": ["find_keycard"],
+      "points": 25,
+      "timeLimit": "PT10M",
+      "hint": {
+        "npcId": "professor_hologram",
+        "message": "The answer relates to a famous physicist... E=mc²"
+      },
+      "onComplete": [
+        {
+          "action": "EMIT_REDSTONE",
+          "position": [55, 65, 55],
+          "strength": 15,
+          "duration": 100
+        },
+        {
+          "action": "NPC_SPEAK",
+          "npcId": "professor_hologram",
+          "message": "Excellent! You've unlocked the next chamber!"
+        }
+      ]
+    },
+    
+    {
+      "id": "explore_main_room",
+      "name": "Explore the Main Room",
+      "description": "Search the laboratory for useful items",
+      "trigger": {
+        "type": "AREA_ENTER",
+        "area": {
+          "min": [-90, 64, -90],
+          "max": [-70, 80, -70]
+        }
+      },
+      "requires": ["enter_lab"],
+      "unlocks": ["find_tools"],
+      "points": 5,
+      "optional": true
+    },
+    
+    {
+      "id": "find_tools",
+      "name": "Find the Tools",
+      "description": "Locate the professor's toolkit",
+      "trigger": {
+        "type": "ITEM_OBTAINED",
+        "itemId": "eira:toolkit"
+      },
+      "requires": ["explore_main_room"],
+      "unlocks": ["bonus_chamber"],
+      "points": 10,
+      "optional": true
+    },
+    
+    {
+      "id": "find_keycard",
+      "name": "Find the Keycard",
+      "description": "The decoded message reveals where the keycard is hidden",
+      "trigger": {
+        "type": "ALL_OF",
+        "triggers": [
+          {
+            "type": "AREA_ENTER",
+            "area": {
+              "min": [30, 64, 30],
+              "max": [40, 70, 40]
+            }
+          },
+          {
+            "type": "ITEM_OBTAINED",
+            "itemId": "eira:lab_keycard"
+          }
+        ]
+      },
+      "requires": ["decode_puzzle"],
+      "unlocks": ["power_on"],
+      "points": 20
+    },
+    
+    {
+      "id": "power_on",
+      "name": "Restore Power",
+      "description": "Use the keycard to restore power to the exit door",
+      "trigger": {
+        "type": "SEQUENCE",
+        "triggers": [
+          {
+            "type": "BLOCK_INTERACT",
+            "blockId": "eira:card_reader",
+            "position": [60, 65, 0]
+          },
+          {
+            "type": "REDSTONE_ON",
+            "position": [65, 65, 0],
+            "comment": "Power indicator light"
+          }
+        ]
+      },
+      "requires": ["find_keycard"],
+      "unlocks": ["escape"],
+      "points": 15,
+      "onComplete": [
+        {
+          "action": "WEBHOOK",
+          "url": "http://lights/power_on"
+        }
+      ]
+    },
+    
+    {
+      "id": "escape",
+      "name": "Escape the Laboratory!",
+      "description": "Make it to the exit before time runs out!",
+      "trigger": {
+        "type": "AREA_ENTER",
+        "area": {
+          "min": [100, 64, -10],
+          "max": [120, 80, 10]
+        }
+      },
+      "requires": ["power_on"],
+      "points": 50,
+      "onComplete": [
+        {
+          "action": "SHOW_TITLE",
+          "title": "§aESCAPED!",
+          "subtitle": "Congratulations! You escaped the lab!"
+        },
+        {
+          "action": "WEBHOOK",
+          "url": "http://leaderboard/complete",
+          "includeTime": true,
+          "includeScore": true
+        },
+        {
+          "action": "WEBHOOK",
+          "url": "http://lights/celebration"
+        }
+      ]
+    },
+    
+    {
+      "id": "bonus_chamber",
+      "name": "Secret Bonus Chamber",
+      "description": "A hidden room with extra points!",
+      "trigger": {
+        "type": "HTTP_ENDPOINT",
+        "endpoint": "/qr/secret-room",
+        "comment": "QR code hidden in physical room"
+      },
+      "requires": ["find_tools"],
+      "optional": true,
+      "hidden": true,
+      "points": 100,
+      "onComplete": [
+        {
+          "action": "BROADCAST",
+          "message": "§5[SECRET]§r Your team discovered a hidden bonus!"
+        }
+      ]
+    },
+    
+    {
+      "id": "npc_full_story",
+      "name": "Uncover the Full Story",
+      "description": "Learn everything the professor's hologram knows",
+      "trigger": {
+        "type": "NPC_SECRET_REVEALED",
+        "npcId": "professor_hologram",
+        "minLevel": 3
+      },
+      "requires": ["get_first_clue"],
+      "optional": true,
+      "hidden": true,
+      "points": 50,
+      "onComplete": [
+        {
+          "action": "SET_PROGRESS",
+          "key": "full_story_unlocked",
+          "value": true
+        }
+      ]
+    }
+  ],
+  
+  "leaderboard": {
+    "track": "completion_time",
+    "display": "fastest",
+    "webhookOnNewRecord": "http://dashboard/new_record"
+  },
+  
+  "npcs": {
+    "professor_hologram": {
+      "characterFile": "characters/professor_hologram.json",
+      "spawnPosition": [-85, 65, -85],
+      "linkedCheckpoints": ["find_hologram", "get_first_clue", "npc_full_story"]
+    },
+    "lab_assistant": {
+      "characterFile": "characters/lab_assistant.json",
+      "spawnPosition": [-75, 65, -90],
+      "providesHints": true
+    }
+  },
+  
+  "rewards": {
+    "completion": {
+      "items": [
+        {"id": "minecraft:diamond", "count": 3}
+      ],
+      "advancement": "eira:escaped_the_lab"
+    },
+    "perfectScore": {
+      "minScore": 300,
+      "items": [
+        {"id": "eira:golden_trophy", "count": 1}
+      ],
+      "advancement": "eira:perfect_escape"
+    }
+  },
+  
+  "metadata": {
+    "author": "Eira Team",
+    "difficulty": "medium",
+    "recommendedAge": "10+",
+    "physicalElements": [
+      "QR codes for puzzle solutions",
+      "Physical buttons connected via Eira Relay",
+      "Smart lights for atmosphere"
+    ],
+    "educationalGoals": [
+      "Team communication",
+      "Problem solving",
+      "Following clues"
+    ]
+  }
+}
