@@ -95,6 +95,38 @@ Subsystems:
 ### Event System
 Events use a publish/subscribe pattern. Any mod can publish `EiraEvent` implementations and subscribe to events from other mods. Supports priorities and async handlers via `@Subscribe` annotation.
 
+### Eira Relay Compatibility
+
+Eira Core provides a compatibility layer for Eira Relay (HappyHttpMod) integration. The event system uses two packages:
+
+| Package | Purpose |
+|---------|---------|
+| `org.eira.core.api.event` | Rich event API with priorities, cancellation, async support |
+| `org.eira.core.api.events` | Simplified API matching Eira Relay's expected interface |
+
+**Architecture:**
+```
+Eira Relay
+  │ uses org.eira.core.api.events.EiraEventBus
+  ▼
+CompatibilityEventBusAdapter
+  │ delegates to
+  ▼
+EiraEventBusImpl (internal rich implementation)
+```
+
+**Compatibility Events** (org.eira.core.api.events):
+
+| Event | Description |
+|-------|-------------|
+| `HttpReceivedEvent` | HTTP request received (QR codes, external APIs) |
+| `ExternalTriggerEvent` | External triggers (sensors, IoT devices) |
+| `RedstoneChangeEvent` | Redstone signal changes |
+| `ServerCommandEvent` | Commands from Eira API Server |
+| `CheckpointCompletedEvent` | Checkpoint completion events |
+
+Events in the compatibility package extend the rich `EiraEvent`, so they work with both APIs.
+
 ### Checkpoint System
 Adventures use an event-driven checkpoint system that can be triggered by:
 - Redstone signals (from Eira Relay blocks)
