@@ -252,6 +252,11 @@ public class AdventureManagerImpl implements AdventureManager {
         private final String adventureId;
         private final ApiClient apiClient;
 
+        // Cache with 30-second TTL
+        private List<LeaderboardEntry> cachedEntries = new ArrayList<>();
+        private long cacheExpiry = 0;
+        private static final long CACHE_TTL_MS = 30_000;
+
         public LeaderboardImpl(String adventureId, ApiClient apiClient) {
             this.adventureId = adventureId;
             this.apiClient = apiClient;
@@ -260,19 +265,105 @@ public class AdventureManagerImpl implements AdventureManager {
         @Override
         public String getAdventureId() { return adventureId; }
 
-        @Override
-        public List<LeaderboardEntry> getTop(int count) { return Collections.emptyList(); }
+        private void refreshCacheIfNeeded() {
+            if (System.currentTimeMillis() > cacheExpiry) {
+                try {
+                    apiClient.get("/adventures/" + adventureId + "/leaderboard", JsonArray.class)
+                        .thenAccept(response -> {
+                            if (response.isSuccess() && response.getData() != null) {
+                                List<LeaderboardEntry> entries = new ArrayList<>();
+                                for (var element : response.getData()) {
+                                    JsonObject entry = element.getAsJsonObject();
+                                    entries.add(new LeaderboardEntryImpl(
+                                        entry.get("teamName").getAsString(),
+                                        Duration.ofMillis(entry.get("completionTime").getAsLong()),
+                                        Instant.parse(entry.get("completedAt").getAsString()),
+                                        entry.has("checkpointsCompleted") ? entry.get("checkpointsCompleted").getAsInt() : 0,
+                                        entry.has("totalCheckpoints") ? entry.get("totalCheckpoints").getAsInt() : 0
+                                    ));
+                                }
+                                cachedEntries = entries;
+                                cacheExpiry = System.currentTimeMillis() + CACHE_TTL_MS;
+                            }
+                        })
+                        .get(); // Block to get result synchronously
+                } catch (Exception e) {
+                    EiraCore.LOGGER.warn("Failed to fetch leaderboard: {}", e.getMessage());
+                }
+            }
+        }
 
         @Override
-        public Optional<Integer> getRank(Team team) { return Optional.empty(); }
+        public List<LeaderboardEntry> getTop(int count) {
+            refreshCacheIfNeeded();
+            return cachedEntries.stream().limit(count).toList();
+        }
 
         @Override
-        public Optional<LeaderboardEntry> getEntry(Team team) { return Optional.empty(); }
+        public Optional<Integer> getRank(Team team) {
+            refreshCacheIfNeeded();
+            for (int i = 0; i < cachedEntries.size(); i++) {
+                if (cachedEntries.get(i).getTeamName().equals(team.getName())) {
+                    return Optional.of(i + 1); // 1-indexed
+                }
+            }
+            return Optional.empty();
+        }
 
         @Override
-        public List<LeaderboardEntry> getEntriesAfter(Instant after) { return Collections.emptyList(); }
+        public Optional<LeaderboardEntry> getEntry(Team team) {
+            refreshCacheIfNeeded();
+            return cachedEntries.stream()
+                .filter(e -> e.getTeamName().equals(team.getName()))
+                .findFirst();
+        }
 
         @Override
-        public int getEntryCount() { return 0; }
+        public List<LeaderboardEntry> getEntriesAfter(Instant after) {
+            refreshCacheIfNeeded();
+            return cachedEntries.stream()
+                .filter(e -> e.getCompletedAt().isAfter(after))
+                .toList();
+        }
+
+        @Override
+        public int getEntryCount() {
+            refreshCacheIfNeeded();
+            return cachedEntries.size();
+        }
+    }
+
+    // ==================== LeaderboardEntry Implementation ====================
+
+    public static class LeaderboardEntryImpl implements Leaderboard.LeaderboardEntry {
+        private final String teamName;
+        private final Duration completionTime;
+        private final Instant completedAt;
+        private final int checkpointsCompleted;
+        private final int totalCheckpoints;
+
+        public LeaderboardEntryImpl(String teamName, Duration completionTime, Instant completedAt,
+                                     int checkpointsCompleted, int totalCheckpoints) {
+            this.teamName = teamName;
+            this.completionTime = completionTime;
+            this.completedAt = completedAt;
+            this.checkpointsCompleted = checkpointsCompleted;
+            this.totalCheckpoints = totalCheckpoints;
+        }
+
+        @Override
+        public String getTeamName() { return teamName; }
+
+        @Override
+        public Duration getCompletionTime() { return completionTime; }
+
+        @Override
+        public Instant getCompletedAt() { return completedAt; }
+
+        @Override
+        public int getCheckpointsCompleted() { return checkpointsCompleted; }
+
+        @Override
+        public int getTotalCheckpoints() { return totalCheckpoints; }
     }
 }
