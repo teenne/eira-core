@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Eira Core is a NeoForge mod (Minecraft 1.21.4) that provides shared infrastructure for the Eira ecosystem - a collection of mods for immersive educational experiences. It serves as the foundation API that other Eira mods (Eira Relay, Eira NPC, Eira Quest) depend on.
 
+**Architecture:** Eira Core acts as a **stateless gateway** between Minecraft and an external API server. All game data (teams, players, adventures, stories) is stored on the external server.
+
 ## Build Commands
 
 ```bash
@@ -27,16 +29,64 @@ Eira Core is a NeoForge mod (Minecraft 1.21.4) that provides shared infrastructu
 
 ## Architecture
 
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     EXTERNAL API SERVER                         │
+│  (Recommended: Node.js + TypeScript + Fastify + PostgreSQL)    │
+│                                                                 │
+│  - Teams, Players, Stories, Adventures, Checkpoints            │
+│  - Leaderboards, Progress tracking                             │
+│  - WebSocket for real-time events                              │
+│  - REST API for CRUD operations                                │
+└─────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ HTTP/WebSocket
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   EIRA CORE (Minecraft Mod)                     │
+│                                                                 │
+│  - Gateway: Forward Minecraft events to API                    │
+│  - Executor: Execute server instructions (sounds, titles, etc) │
+│  - Local event bus for other Eira mods (Relay, NPC, Quest)     │
+│  - Stateless: No persistent data storage                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ### Entry Point
 - `EiraCore` (src/main/java/org/eira/core/EiraCore.java) - Main mod class that implements `EiraAPI` and initializes all subsystems
+
+### Core Infrastructure (org.eira.core.impl)
+
+| Class | Purpose |
+|-------|---------|
+| `ApiClient` | Async HTTP client for REST API calls |
+| `WebSocketClient` | Real-time bidirectional communication |
+| `EiraEventBusImpl` | Local event bus for Eira mods |
+| `EiraConfigImpl` | NeoForge config with API settings |
+
+### Manager Implementations (org.eira.core.impl)
+
+| Class | Purpose |
+|-------|---------|
+| `TeamManagerImpl` | Team CRUD via API, local caching |
+| `PlayerManagerImpl` | Player data via API |
+| `AdventureManagerImpl` | Adventure lifecycle via API |
+| `StoryManagerImpl` | Story/chapter management via API |
+
+### Event/Instruction Handling (org.eira.core.impl)
+
+| Class | Purpose |
+|-------|---------|
+| `NeoForgeEventBridge` | Forward Minecraft events to API server |
+| `InstructionHandler` | Execute API server commands in Minecraft |
 
 ### Public API (org.eira.core.api)
 The API is accessed via `EiraAPI.get()` or safely via `EiraAPI.ifPresent(eira -> {...})` for soft dependencies.
 
 Subsystems:
 - `events()` - Cross-mod event bus for loose coupling between Eira mods
-- `teams()` - Team creation/management with data storage and communication
-- `players()` - Extended player data and progress tracking (persists across sessions)
+- `teams()` - Team creation/management (stored on API server)
+- `players()` - Extended player data and progress tracking (stored on API server)
 - `stories()` - Narrative framework with chapters, secrets, and story state
 - `adventures()` - Timed challenges with checkpoints, triggers, and leaderboards
 - `config()` - Shared configuration management
@@ -52,17 +102,48 @@ Adventures use an event-driven checkpoint system that can be triggered by:
 - HTTP requests (QR codes, sensors, external APIs)
 - Game events (area entry, item collection)
 
-Triggers can be composed with `CheckpointTrigger.all()`, `any()`, or `sequence()`.
+Triggers are processed on the API server.
 
-### Implementation Classes
-Internal implementations are in `org.eira.core.impl` (e.g., `EiraEventBusImpl`, `TeamManagerImpl`). These are not part of the public API.
+### Commands
+Admin commands available via `/eira`:
+- `/eira status` - Show API/WebSocket connection status
+- `/eira team <create|list|disband|add|remove|info>` - Team management
+- `/eira adventure <start|stop|list|active|checkpoint>` - Adventure management
+- `/eira player <progress|reset>` - Player data
+- `/eira debug <events|api|ws>` - Debug utilities
+- `/eira reconnect` - Force reconnection to API server
+
+## Configuration
+
+Configuration file: `config/eira-core.toml`
+
+```toml
+[api]
+baseUrl = "http://localhost:3000/api"
+apiKey = ""
+timeoutMs = 10000
+retryCount = 3
+
+[websocket]
+url = "ws://localhost:3000/ws"
+reconnectDelayMs = 5000
+
+[general]
+debugMode = false
+verboseLogging = false
+
+[teams]
+defaultMaxSize = 8
+defaultColor = "WHITE"
+```
 
 ## Key Patterns
 
-- Builder pattern for creating Teams, Stories, Adventures, and Checkpoints
-- Implementations receive the event bus in constructor for publishing events
-- Data persistence handled via Minecraft's saved data system (SavedData)
-- Config uses NeoForge's config spec system
+- **Stateless Gateway:** All data stored on external API server
+- **Async API Calls:** All manager methods use CompletableFuture internally
+- **Local Caching:** Teams/adventures cached locally for performance
+- **Event Forwarding:** Minecraft events forwarded to API server
+- **Instruction Execution:** API server sends commands executed in Minecraft
 
 ## Dependencies
 
@@ -70,3 +151,28 @@ Internal implementations are in `org.eira.core.impl` (e.g., `EiraEventBusImpl`, 
 - Java 21
 - Parchment mappings (2024.12.07)
 - Gson for JSON handling
+
+## API Server Requirements
+
+The external API server should provide:
+
+### REST Endpoints
+- `GET/POST /api/teams` - Team management
+- `GET/PUT /api/players/:uuid` - Player data
+- `GET /api/adventures` - Adventure definitions
+- `POST /api/adventures/:id/start` - Start adventure
+- `GET /api/stories` - Story definitions
+- `POST /api/events/*` - Game event forwarding
+- `GET /api/health` - Health check
+
+### WebSocket Messages
+- `INSTRUCTION` - Commands to execute in Minecraft
+- `BATCH_INSTRUCTION` - Multiple commands
+- Supported actions: `SHOW_TITLE`, `PLAY_SOUND`, `SEND_MESSAGE`, `TELEPORT`, `GIVE_ITEM`, `RUN_COMMAND`
+
+### Recommended Stack
+- Runtime: Node.js 20 LTS
+- Framework: Fastify 4.x
+- Language: TypeScript 5.x
+- Database: PostgreSQL 16
+- ORM: Prisma 5.x

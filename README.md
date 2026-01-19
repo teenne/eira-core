@@ -6,6 +6,16 @@
 
 **Eira Core** is the foundation mod for the Eira ecosystem - a collection of Minecraft mods designed for immersive educational experiences that bridge physical and digital worlds.
 
+ _______ _________ _______  _______    _______  _______  _______  _______ 
+(  ____ \\__   __/(  ____ )(  ___  )  (  ____ \(  ___  )(  ____ )(  ____ \
+| (    \/   ) (   | (    )|| (   ) |  | (    \/| (   ) || (    )|| (    \/
+| (__       | |   | (____)|| (___) |  | |      | |   | || (____)|| (__    
+|  __)      | |   |     __)|  ___  |  | |      | |   | ||     __)|  __)   
+| (         | |   | (\ (   | (   ) |  | |      | |   | || (\ (   | (      
+| (____/\___) (___| ) \ \__| )   ( |  | (____/\| (___) || ) \ \__| (____/\
+(_______/\_______/|/   \__/|/     \|  (_______/(_______)|/   \__/(_______/
+
+
 ## 🎯 What is Eira Core?
 
 Eira Core provides shared infrastructure that allows multiple Eira mods to work together seamlessly:
