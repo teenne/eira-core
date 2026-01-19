@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+
+# Run directories
+run/
+
+# Config (generated)
+config/
+
+# Claude temp files
+tmpclaude-*
+nul
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db

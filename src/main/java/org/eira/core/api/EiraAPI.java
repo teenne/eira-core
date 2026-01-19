@@ -1,6 +1,6 @@
 package org.eira.core.api;
 
-import org.eira.core.api.event.EiraEventBus;
+import org.eira.core.api.events.EiraEventBus;
 import org.eira.core.api.team.TeamManager;
 import org.eira.core.api.player.PlayerManager;
 import org.eira.core.api.story.StoryManager;
