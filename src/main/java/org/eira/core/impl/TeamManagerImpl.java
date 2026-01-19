@@ -145,7 +145,7 @@ public class TeamManagerImpl implements TeamManager {
                 if (response.isSuccess()) {
                     teamCache.remove(teamId);
                     team.getMemberIds().forEach(playerTeamCache::remove);
-                    eventBus.publish(new EiraEvents.TeamDisbandedEvent(team));
+                    eventBus.publish(new EiraEvents.TeamDisbandedEvent(team, EiraEvents.TeamDisbandedEvent.DisbandReason.MANUAL));
                 }
             });
 
@@ -190,7 +190,7 @@ public class TeamManagerImpl implements TeamManager {
                         playerTeamCache.put(memberId, team.getId());
                     }
 
-                    eventBus.publish(new EiraEvents.TeamCreatedEvent(team));
+                    eventBus.publish(new EiraEvents.TeamCreatedEvent(team, null));
                     return team;
                 } else {
                     throw new RuntimeException("Failed to create team: " + response.getError());
@@ -461,7 +461,7 @@ public class TeamManagerImpl implements TeamManager {
 
             manager.removeMemberOnServer(this, playerId);
             manager.getEventBus().publish(new EiraEvents.TeamMemberLeftEvent(
-                this, player, EiraEvents.TeamMemberLeftEvent.LeaveReason.REMOVED
+                this, player, EiraEvents.TeamMemberLeftEvent.LeaveReason.KICKED
             ));
             return true;
         }
@@ -520,13 +520,13 @@ public class TeamManagerImpl implements TeamManager {
         @Override
         public void broadcast(Component message) {
             for (Player player : getOnlineMembers()) {
-                player.sendSystemMessage(message);
+                player.displayClientMessage(message, false);
             }
         }
 
         @Override
         public void sendTo(Player player, String message) {
-            player.sendSystemMessage(Component.literal(message));
+            player.displayClientMessage(Component.literal(message), false);
         }
 
         @Override
@@ -782,7 +782,8 @@ public class TeamManagerImpl implements TeamManager {
 
         private void syncToServer() {
             team.manager.updateTeamOnServer(team);
-            team.manager.getEventBus().publish(new EiraEvents.TeamDataChangedEvent(team, null, null));
+            // Note: key, oldValue, newValue are not tracked in batch sync
+            team.manager.getEventBus().publish(new EiraEvents.TeamDataChangedEvent(team, null, null, null));
         }
     }
 }

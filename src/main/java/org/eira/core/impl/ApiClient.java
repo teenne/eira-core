@@ -38,10 +38,14 @@ import java.util.function.Supplier;
  */
 public class ApiClient {
 
+    private static final int DEFAULT_TIMEOUT_MS = 10000;
+
     private final EiraConfigImpl config;
-    private final HttpClient httpClient;
     private final Gson gson;
     private final ExecutorService executor;
+
+    // Lazily initialized to avoid reading config before it's loaded
+    private volatile HttpClient httpClient;
 
     private volatile boolean connected = false;
     private volatile String lastError = null;
@@ -61,10 +65,31 @@ public class ApiClient {
             t.setDaemon(true);
             return t;
         });
-        this.httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMillis(config.getApiTimeoutMs()))
-            .executor(executor)
-            .build();
+        // HttpClient is created lazily on first use
+    }
+
+    /**
+     * Get the HttpClient, creating it lazily if needed.
+     */
+    private HttpClient getHttpClient() {
+        if (httpClient == null) {
+            synchronized (this) {
+                if (httpClient == null) {
+                    int timeout;
+                    try {
+                        timeout = config.getApiTimeoutMs();
+                    } catch (Exception e) {
+                        // Config not loaded yet, use default
+                        timeout = DEFAULT_TIMEOUT_MS;
+                    }
+                    httpClient = HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofMillis(timeout))
+                        .executor(executor)
+                        .build();
+                }
+            }
+        }
+        return httpClient;
     }
 
     // ==================== HTTP Methods ====================
@@ -159,17 +184,30 @@ public class ApiClient {
     }
 
     private HttpRequest.Builder buildRequest(String path) {
-        String baseUrl = config.getApiBaseUrl();
+        String baseUrl;
+        int timeout;
+        String apiKey;
+
+        try {
+            baseUrl = config.getApiBaseUrl();
+            timeout = config.getApiTimeoutMs();
+            apiKey = config.getApiKey();
+        } catch (Exception e) {
+            // Config not loaded yet, use defaults
+            baseUrl = "http://localhost:3000/api";
+            timeout = DEFAULT_TIMEOUT_MS;
+            apiKey = "";
+        }
+
         String url = baseUrl.endsWith("/") ? baseUrl + path.substring(1) : baseUrl + path;
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create(url))
-            .timeout(Duration.ofMillis(config.getApiTimeoutMs()))
+            .timeout(Duration.ofMillis(timeout))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json");
 
         // Add API key if configured
-        String apiKey = config.getApiKey();
         if (apiKey != null && !apiKey.isEmpty()) {
             builder.header("Authorization", "Bearer " + apiKey);
         }
@@ -178,11 +216,15 @@ public class ApiClient {
     }
 
     private <T> CompletableFuture<ApiResponse<T>> execute(HttpRequest request, Class<T> responseClass) {
-        if (config.isVerboseLogging()) {
-            EiraCore.LOGGER.debug("API Request: {} {}", request.method(), request.uri());
+        try {
+            if (config.isVerboseLogging()) {
+                EiraCore.LOGGER.debug("API Request: {} {}", request.method(), request.uri());
+            }
+        } catch (Exception ignored) {
+            // Config not loaded yet, skip verbose logging
         }
 
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return getHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
             .thenApply(response -> {
                 connected = true;
                 lastError = null;
@@ -243,7 +285,13 @@ public class ApiClient {
 
     private <T> CompletableFuture<ApiResponse<T>> executeWithRetry(
             Supplier<CompletableFuture<ApiResponse<T>>> requestSupplier) {
-        return executeWithRetry(requestSupplier, config.getApiRetryCount());
+        int retryCount;
+        try {
+            retryCount = config.getApiRetryCount();
+        } catch (Exception e) {
+            retryCount = 3; // Default retry count
+        }
+        return executeWithRetry(requestSupplier, retryCount);
     }
 
     private <T> CompletableFuture<ApiResponse<T>> executeWithRetry(

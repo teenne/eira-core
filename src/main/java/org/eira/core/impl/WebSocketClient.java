@@ -53,6 +53,8 @@ public class WebSocketClient {
 
     private static final int MAX_RECONNECT_ATTEMPTS = 10;
     private static final int HEARTBEAT_INTERVAL_SECONDS = 30;
+    private static final String DEFAULT_WS_URL = "ws://localhost:3000/ws";
+    private static final int DEFAULT_RECONNECT_DELAY_MS = 5000;
 
     /**
      * Create a new WebSocket client.
@@ -87,7 +89,12 @@ public class WebSocketClient {
     }
 
     private CompletableFuture<Boolean> doConnect() {
-        String wsUrl = config.getWebSocketUrl();
+        String wsUrl;
+        try {
+            wsUrl = config.getWebSocketUrl();
+        } catch (Exception e) {
+            wsUrl = DEFAULT_WS_URL;
+        }
         EiraCore.LOGGER.info("Connecting to WebSocket: {}", wsUrl);
 
         return httpClient.newWebSocketBuilder()
@@ -147,7 +154,12 @@ public class WebSocketClient {
         }
 
         reconnectAttempts++;
-        int delay = config.getWebSocketReconnectDelayMs();
+        int delay;
+        try {
+            delay = config.getWebSocketReconnectDelayMs();
+        } catch (Exception e) {
+            delay = DEFAULT_RECONNECT_DELAY_MS;
+        }
         // Exponential backoff (capped at 60 seconds)
         int backoffDelay = Math.min(delay * reconnectAttempts, 60000);
 
@@ -229,8 +241,12 @@ public class WebSocketClient {
 
         String json = gson.toJson(message);
 
-        if (config.isVerboseLogging()) {
-            EiraCore.LOGGER.debug("WS Send: {}", json);
+        try {
+            if (config.isVerboseLogging()) {
+                EiraCore.LOGGER.debug("WS Send: {}", json);
+            }
+        } catch (Exception ignored) {
+            // Config not loaded yet
         }
 
         return webSocket.sendText(json, true)
@@ -284,8 +300,12 @@ public class WebSocketClient {
     }
 
     private void handleMessage(String json) {
-        if (config.isVerboseLogging()) {
-            EiraCore.LOGGER.debug("WS Recv: {}", json);
+        try {
+            if (config.isVerboseLogging()) {
+                EiraCore.LOGGER.debug("WS Recv: {}", json);
+            }
+        } catch (Exception ignored) {
+            // Config not loaded yet
         }
 
         try {
@@ -306,8 +326,14 @@ public class WebSocketClient {
                     EiraCore.LOGGER.error("Error in message handler for type {}: {}",
                         type, e.getMessage(), e);
                 }
-            } else if (config.isDebugMode()) {
-                EiraCore.LOGGER.debug("No handler for message type: {}", type);
+            } else {
+                try {
+                    if (config.isDebugMode()) {
+                        EiraCore.LOGGER.debug("No handler for message type: {}", type);
+                    }
+                } catch (Exception ignored) {
+                    // Config not loaded yet
+                }
             }
         } catch (Exception e) {
             EiraCore.LOGGER.error("Failed to parse WebSocket message: {}", e.getMessage());

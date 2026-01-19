@@ -401,8 +401,8 @@ public class StoryManagerImpl implements StoryManager {
             if (!unlockedChapters.contains(chapterId)) {
                 unlockedChapters.add(chapterId);
             }
-            // Note: Would need entity reference to sync to server
-            manager.getEventBus().publish(new EiraEvents.ChapterUnlockedEvent(storyId, chapterId, null));
+            // Note: Player context not available here - would need to be passed from calling context
+            manager.getEventBus().publish(new EiraEvents.ChapterUnlockedEvent(null, storyId, chapterId));
         }
 
         @Override
@@ -443,8 +443,11 @@ public class StoryManagerImpl implements StoryManager {
         @Override
         public void revealSecretHint(String secretId) {
             int current = secretLevels.getOrDefault(secretId, 0);
-            secretLevels.put(secretId, current + 1);
-            manager.getEventBus().publish(new EiraEvents.SecretRevealedEvent(storyId, secretId, current + 1, null));
+            int newLevel = current + 1;
+            secretLevels.put(secretId, newLevel);
+            // Note: npcId and player context not available - would need to be passed from calling context
+            // maxLevel would need to be looked up from story secrets
+            manager.getEventBus().publish(new EiraEvents.SecretRevealedEvent(null, null, secretId, newLevel, 3));
         }
 
         @Override

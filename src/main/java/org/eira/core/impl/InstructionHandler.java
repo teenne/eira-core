@@ -238,11 +238,9 @@ public class InstructionHandler {
             return;
         }
 
-        SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(soundLoc);
-        if (sound == null) {
-            // Create a simple sound event for custom sounds
-            sound = SoundEvent.createVariableRangeEvent(soundLoc);
-        }
+        SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(soundLoc)
+            .map(ref -> ref.value())
+            .orElseGet(() -> SoundEvent.createVariableRangeEvent(soundLoc));
 
         for (ServerPlayer player : players) {
             player.playNotifySound(sound, SoundSource.MASTER, volume, pitch);
@@ -278,17 +276,19 @@ public class InstructionHandler {
             return;
         }
 
-        Item item = BuiltInRegistries.ITEM.get(itemLoc);
-        if (item == null) {
+        var itemRef = BuiltInRegistries.ITEM.get(itemLoc);
+        if (itemRef.isEmpty()) {
             EiraCore.LOGGER.warn("Item not found: {}", itemId);
             return;
         }
 
+        Item item = itemRef.get().value();
         ItemStack stack = new ItemStack(item, count);
 
         // Set custom name if provided
         if (params.has("name")) {
-            stack.setHoverName(Component.literal(params.get("name").getAsString()));
+            stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                Component.literal(params.get("name").getAsString()));
         }
 
         for (ServerPlayer player : players) {

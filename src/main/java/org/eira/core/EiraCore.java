@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 @Mod(EiraCore.MOD_ID)
 public class EiraCore implements EiraAPI {
 
-    public static final String MOD_ID = "eira-core";
+    public static final String MOD_ID = "eiracore";
     public static final Logger LOGGER = LoggerFactory.getLogger("EiraCore");
 
     private static EiraCore instance;
@@ -96,7 +96,7 @@ public class EiraCore implements EiraAPI {
         this.network = new EiraNetworkImpl();
 
         // Register config
-        modContainer.registerConfig(Type.COMMON, EiraConfigImpl.SPEC, "eira-core.toml");
+        modContainer.registerConfig(Type.COMMON, EiraConfigImpl.SPEC, "eiracore.toml");
 
         // Register network payloads
         modEventBus.addListener(network::registerPayloads);

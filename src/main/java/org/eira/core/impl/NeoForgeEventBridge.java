@@ -253,8 +253,8 @@ public class NeoForgeEventBridge {
 
     @SubscribeEvent
     public void onWorldLoad(LevelEvent.Load event) {
-        if (!event.getLevel().isClientSide()) {
-            String dimension = event.getLevel().dimension().location().toString();
+        if (!event.getLevel().isClientSide() && event.getLevel() instanceof net.minecraft.world.level.Level level) {
+            String dimension = level.dimension().location().toString();
 
             JsonObject payload = new JsonObject();
             payload.addProperty("dimension", dimension);
@@ -267,8 +267,8 @@ public class NeoForgeEventBridge {
 
     @SubscribeEvent
     public void onWorldSave(LevelEvent.Save event) {
-        if (!event.getLevel().isClientSide()) {
-            String dimension = event.getLevel().dimension().location().toString();
+        if (!event.getLevel().isClientSide() && event.getLevel() instanceof net.minecraft.world.level.Level level) {
+            String dimension = level.dimension().location().toString();
 
             eventBus.publish(new WorldSavedEvent(dimension));
         }

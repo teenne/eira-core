@@ -36,7 +36,7 @@ public final class EiraAPIProvider {
     public static EiraAPI get() {
         if (instance == null) {
             throw new IllegalStateException(
-                "EiraAPI not available. Make sure eira-core is loaded and initialized."
+                "EiraAPI not available. Make sure eiracore is loaded and initialized."
             );
         }
         return instance;

@@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -210,7 +211,7 @@ public class EiraCommands {
         }
     }
 
-    private static int createTeamWithPlayers(CommandContext<CommandSourceStack> ctx) throws Exception {
+    private static int createTeamWithPlayers(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         String name = StringArgumentType.getString(ctx, "name");
         Collection<ServerPlayer> players = EntityArgument.getPlayers(ctx, "players");
 
@@ -247,7 +248,7 @@ public class EiraCommands {
             });
     }
 
-    private static int addToTeam(CommandContext<CommandSourceStack> ctx) throws Exception {
+    private static int addToTeam(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         String teamName = StringArgumentType.getString(ctx, "teamName");
         ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
 
@@ -270,7 +271,7 @@ public class EiraCommands {
             });
     }
 
-    private static int removeFromTeam(CommandContext<CommandSourceStack> ctx) throws Exception {
+    private static int removeFromTeam(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         String teamName = StringArgumentType.getString(ctx, "teamName");
         ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
 
@@ -419,7 +420,7 @@ public class EiraCommands {
 
     // ==================== Player Commands ====================
 
-    private static int showPlayerProgress(CommandContext<CommandSourceStack> ctx) throws Exception {
+    private static int showPlayerProgress(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
         var eiraPlayer = EiraCore.getInstance().players().get(player);
 
@@ -443,7 +444,7 @@ public class EiraCommands {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int setPlayerProgress(CommandContext<CommandSourceStack> ctx) throws Exception {
+    private static int setPlayerProgress(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
         String key = StringArgumentType.getString(ctx, "key");
         int value = IntegerArgumentType.getInteger(ctx, "value");
@@ -458,7 +459,7 @@ public class EiraCommands {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int resetPlayerProgress(CommandContext<CommandSourceStack> ctx) throws Exception {
+    private static int resetPlayerProgress(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
 
         var eiraPlayer = EiraCore.getInstance().players().get(player);
