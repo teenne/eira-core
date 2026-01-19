@@ -2,7 +2,7 @@ package org.eira.core;
 
 import org.eira.core.api.EiraAPI;
 import org.eira.core.api.EiraAPIProvider;
-import org.eira.core.api.event.EiraEventBus;
+import org.eira.core.api.events.EiraEventBus;
 import org.eira.core.api.team.TeamManager;
 import org.eira.core.api.player.PlayerManager;
 import org.eira.core.api.story.StoryManager;
@@ -53,6 +53,7 @@ public class EiraCore implements EiraAPI {
     private final ApiClient apiClient;
     private final WebSocketClient webSocket;
     private final EiraEventBusImpl eventBus;
+    private final CompatibilityEventBusAdapter compatEventBus;
 
     // Subsystem implementations
     private final TeamManagerImpl teamManager;
@@ -79,6 +80,7 @@ public class EiraCore implements EiraAPI {
         this.apiClient = new ApiClient(config);
         this.webSocket = new WebSocketClient(config);
         this.eventBus = new EiraEventBusImpl();
+        this.compatEventBus = new CompatibilityEventBusAdapter(eventBus);
 
         // Initialize subsystems with API client
         this.teamManager = new TeamManagerImpl(eventBus, apiClient);
@@ -177,7 +179,7 @@ public class EiraCore implements EiraAPI {
 
     @Override
     public EiraEventBus events() {
-        return eventBus;
+        return compatEventBus;
     }
 
     @Override
