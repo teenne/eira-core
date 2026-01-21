@@ -288,11 +288,24 @@ Eira mods are designed for educational installations:
 - **Escape Rooms** - Minecraft + physical puzzles combined
 - **STEM Challenges** - Science experiments trigger in-game events
 
+## Project Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Core Infrastructure** | ✅ Complete | HTTP client, WebSocket, Event bus, Config |
+| **API Integration** | ✅ Complete | Team, Player, Adventure, Story managers |
+| **Event Forwarding** | ✅ Complete | NeoForge event bridge |
+| **Instruction Handling** | ✅ Complete | Execute server commands |
+| **Commands** | ✅ Complete | Admin commands for management |
+| **Eira Relay Compatibility** | ✅ Complete | Adapter for HappyHttpMod integration |
+
 ## Related Projects
 
-- [Eira API](https://github.com/teenne/eira-api) - The backend server for Eira Core
-- [Eira Relay](https://github.com/eira-org/eira-relay) - IoT/HTTP integration
-- [Eira NPC](https://github.com/eira-org/eira-npc) - AI-powered NPCs
+| Project | Description | Status |
+|---------|-------------|--------|
+| [Eira API](https://github.com/teenne/eira-api) | Backend server (Node.js + PostgreSQL) | Beta - 71 tests |
+| [Eira Relay](https://github.com/eira-org/eira-relay) | IoT/HTTP integration | Planned |
+| [Eira NPC](https://github.com/eira-org/eira-npc) | AI-powered NPCs | Planned |
 
 ## License
 

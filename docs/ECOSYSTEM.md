@@ -1,9 +1,41 @@
 # Eira Mod Ecosystem
 # Architecture & Vision
 
-**Version:** 1.0 Draft  
-**Organization:** Eira (Non-profit coding education)  
-**Target:** Minecraft 1.21.x with NeoForge
+**Version:** 1.0
+**Organization:** Eira (Non-profit coding education)
+**Target:** Minecraft 1.21.4 with NeoForge 21.4.x
+
+---
+
+## Current Implementation Status
+
+| Component | Status | Repository |
+|-----------|--------|------------|
+| **Eira Core** (Minecraft mod) | ✅ Beta | [eira-core](https://github.com/teenne/eira-core) |
+| **Eira API** (Backend server) | ✅ Beta | [eira-api](https://github.com/teenne/eira-api) |
+| **Eira Relay** | 🔶 Planned | - |
+| **Eira NPC** | 🔶 Planned | - |
+| **Eira Quest** | 🔶 Planned | - |
+
+### Eira Core Features (Complete)
+- ✅ HTTP client for REST API calls
+- ✅ WebSocket client for real-time communication
+- ✅ Event bus for cross-mod communication
+- ✅ Team, Player, Adventure, Story managers
+- ✅ NeoForge event bridge (forwards Minecraft events)
+- ✅ Instruction handler (executes server commands)
+- ✅ Admin commands (`/eira`)
+- ✅ Eira Relay compatibility layer
+
+### Eira API Features (Complete)
+- ✅ Teams API (CRUD, members)
+- ✅ Players API (progress, data)
+- ✅ Adventures API (checkpoints, leaderboards)
+- ✅ Stories API (chapters, flags, secrets)
+- ✅ Events API (ingestion, triggers, instructions)
+- ✅ WebSocket handler (real-time bidirectional)
+- ✅ Health monitoring (DB latency, WS stats)
+- ✅ 71 integration tests
 
 ---
 
@@ -522,8 +554,25 @@ eira-core/
 
 ## Next Steps
 
-1. **Review this architecture** - Feedback on scope and priorities
-2. **Create Eira Core mod** - Foundation implementation
-3. **Define event schemas** - Standardize cross-mod communication
-4. **Update existing mods** - Integrate with Core
-5. **Build example adventure** - Showcase the ecosystem
+### Completed
+- ✅ Review architecture - Scope and priorities defined
+- ✅ Create Eira Core mod - Foundation implementation complete
+- ✅ Create Eira API server - Backend implementation complete
+- ✅ Define event schemas - Standardized in Zod schemas
+
+### In Progress
+- 🔶 Build example adventure - Showcase the ecosystem
+- 🔶 Production deployment guide
+- 🔶 API documentation (OpenAPI/Swagger)
+
+### Planned
+1. **Update Eira Relay** - Integrate with Core events
+2. **Create Eira NPC** - AI-powered storytelling NPCs
+3. **Create Eira Quest** - Structured objectives system
+4. **Admin dashboard** - Web UI for management
+5. **Mobile app** - Companion app for participants
+
+### Development Resources
+- [Eira Core README](../README.md)
+- [Eira API README](https://github.com/teenne/eira-api#readme)
+- [API Roadmap](https://github.com/teenne/eira-api#roadmap)

@@ -184,9 +184,19 @@ defaultColor = "WHITE"
 - Parchment mappings (2024.12.07)
 - Gson for JSON handling
 
-## API Server Requirements
+## API Server (eira-api)
 
-The external API server should provide:
+The companion API server is available at: **https://github.com/teenne/eira-api**
+
+### Quick Start
+```bash
+git clone https://github.com/teenne/eira-api.git
+cd eira-api
+npm install
+cp .env.example .env  # Edit with your settings
+npm run db:push
+npm run dev
+```
 
 ### REST Endpoints
 - `GET/POST /api/teams` - Team management
@@ -195,16 +205,26 @@ The external API server should provide:
 - `POST /api/adventures/:id/start` - Start adventure
 - `GET /api/stories` - Story definitions
 - `POST /api/events/*` - Game event forwarding
-- `GET /api/health` - Health check
+- `GET /api/health` - Health check (includes DB latency and WebSocket stats)
+- `GET /api/ws/stats` - WebSocket connection monitoring
 
 ### WebSocket Messages
 - `INSTRUCTION` - Commands to execute in Minecraft
 - `BATCH_INSTRUCTION` - Multiple commands
 - Supported actions: `SHOW_TITLE`, `PLAY_SOUND`, `SEND_MESSAGE`, `TELEPORT`, `GIVE_ITEM`, `RUN_COMMAND`
 
-### Recommended Stack
+### Tech Stack
 - Runtime: Node.js 20 LTS
 - Framework: Fastify 4.x
 - Language: TypeScript 5.x
 - Database: PostgreSQL 16
 - ORM: Prisma 5.x
+- Validation: Zod
+- Tests: Vitest (71 tests)
+
+### API Server Status
+See the [eira-api README](https://github.com/teenne/eira-api#roadmap) for:
+- Current feature status
+- Roadmap and planned features
+- Tech debt and known issues
+- Next development phase PR plan
