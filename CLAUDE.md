@@ -228,3 +228,18 @@ See the [eira-api README](https://github.com/teenne/eira-api#roadmap) for:
 - Roadmap and planned features
 - Tech debt and known issues
 - Next development phase PR plan
+
+## Recommended Plugins
+
+Install these Claude Code plugins for optimal development experience:
+
+```bash
+# oh-my-claudecode - Multi-agent orchestration (27 agents, 28 skills)
+/plugin marketplace add https://github.com/Yeachan-Heo/oh-my-claudecode
+/plugin install oh-my-claudecode
+/oh-my-claudecode:omc-setup
+
+# frontend-design - Production-grade UI/UX (official Anthropic plugin)
+/plugin marketplace add anthropics/claude-code
+/plugin install frontend-design@claude-code-plugins
+```
